@@ -2,10 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<!-- KP Taekwondo – trang ngoài mở web app Google Apps Script trong khung toàn màn hình,
-     để không còn dòng chữ "Ứng dụng này do một người dùng Google Apps Script tạo".
-     CHỈ CẦN SỬA 1 DÒNG: dán link web app (dạng https://script.google.com/macros/s/…/exec) vào APP_URL bên dưới. -->
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- KP Taekwondo – Trang wrapper toàn màn hình, chống dòng chữ Google, fix tràn viền iOS -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,40 +14,124 @@
 <link id="icon" rel="icon" href="data:,">
 <link id="touch" rel="apple-touch-icon" href="data:,">
 <style>
-  :root { --bar: #7d0a0e; --foot: #ffffff; }
-  @media (prefers-color-scheme: dark) { :root { --foot: #1d1517; } }
-  html, body { margin: 0; height: 100%; background: var(--bar); overflow: hidden; }
-  body { display: flex; flex-direction: column; height: 100dvh;
-    padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box;
-    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
-  #app { flex: 1; width: 100%; border: 0; display: block; background: var(--foot); }
-  #foot { height: env(safe-area-inset-bottom, 0px); background: var(--foot); flex: none; }
-  #wait { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #8e0b10, #3a0507);
-    color: #f0cd7f; text-align: center; transition: opacity .35s; z-index: 2; }
-  #wait.off { opacity: 0; pointer-events: none; }
-  #wait img { width: 92px; height: 92px; border-radius: 50%; object-fit: contain; display: block; margin: 0 auto 14px; }
-  #wait b { display: block; font-size: 20px; letter-spacing: .12em; color: #fff; }
-  #wait small { display: block; margin-top: 6px; font-size: 12px; letter-spacing: .2em; }
-  #wait .ring { width: 30px; height: 30px; margin: 18px auto 0; border: 3px solid rgba(240,205,127,.3); border-top-color: #f0cd7f; border-radius: 50%; animation: s 1s linear infinite; }
-  @keyframes s { to { transform: rotate(360deg); } }
-  #err { display: none; max-width: 300px; margin: 16px auto 0; font-size: 14px; line-height: 1.5; color: #fff; }
+  :root { 
+    --bar: #7d0a0e; 
+    --bg-dark: #120c0d; /* Trùng với màu nền app trong, triệt tiêu mọi vệt đỏ lệch màu */
+  }
+
+  html, body { 
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    height: 100%; 
+    height: 100dvh; 
+    background: var(--bg-dark); 
+    overflow: hidden; 
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Khung iframe chiếm trọn 100% màn hình, không bị hụt đáy do Flexbox */
+  #app { 
+    position: absolute;
+    inset: 0;
+    width: 100%; 
+    height: 100%; 
+    height: 100dvh; 
+    border: 0; 
+    display: block; 
+    background: var(--bg-dark); 
+    z-index: 1;
+  }
+
+  /* Màn hình chờ khởi động */
+  #wait { 
+    position: fixed; 
+    inset: 0; 
+    display: grid; 
+    place-items: center; 
+    background: radial-gradient(circle at 50% 35%, #8e0b10, #220304);
+    color: #f0cd7f; 
+    text-align: center; 
+    transition: opacity .4s ease, visibility .4s ease; 
+    z-index: 10; 
+  }
+  #wait.off { 
+    opacity: 0; 
+    visibility: hidden; 
+    pointer-events: none; 
+  }
+  #wait img { 
+    width: 90px; 
+    height: 90px; 
+    border-radius: 50%; 
+    object-fit: contain; 
+    display: block; 
+    margin: 0 auto 14px; 
+    box-shadow: 0 0 0 3px rgba(240, 205, 127, 0.4);
+  }
+  #wait b { 
+    display: block; 
+    font-size: 20px; 
+    letter-spacing: .1em; 
+    color: #fff; 
+  }
+  #wait small { 
+    display: block; 
+    margin-top: 6px; 
+    font-size: 12px; 
+    letter-spacing: .2em; 
+    opacity: 0.85;
+  }
+  #wait .ring { 
+    width: 28px; 
+    height: 28px; 
+    margin: 18px auto 0; 
+    border: 3px solid rgba(240, 205, 127, 0.25); 
+    border-top-color: #f0cd7f; 
+    border-radius: 50%; 
+    animation: rot 0.9s linear infinite; 
+  }
+  @keyframes rot { to { transform: rotate(360deg); } }
+
+  #err { 
+    display: none; 
+    max-width: 320px; 
+    margin: 16px auto 0; 
+    font-size: 13.5px; 
+    line-height: 1.5; 
+    color: #ffb4ad; 
+    background: rgba(0,0,0,0.4);
+    padding: 10px 14px;
+    border-radius: 12px;
+  }
 </style>
 </head>
 <body>
-<div id="wait"><div><img id="wlogo" alt="" hidden><b>CLB VÕ THUẬT TAEKWONDO</b><small>ĐAM MÊ &amp; KỶ LUẬT</small><div class="ring"></div><div id="err"></div></div></div>
+
+<div id="wait">
+  <div>
+    <img id="wlogo" alt="" hidden>
+    <b>CLB VÕ THUẬT TAEKWONDO</b>
+    <small>ĐAM MÊ &amp; KỶ LUẬT</small>
+    <div class="ring"></div>
+    <div id="err"></div>
+  </div>
+</div>
+
+<!-- Đã bỏ thẻ #foot thừa ở đáy gây vệt màu đỏ -->
 <iframe id="app" title="CLB VÕ THUẬT TAEKWONDO" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
-<div id="foot"></div>
+
 <script>
-  /* ====== DÁN LINK WEB APP VÀO ĐÂY (giữ nguyên dấu nháy) ====== */
+  /* ====== LINK WEB APP CỦA CLB ====== */
   var APP_URL = 'https://script.google.com/macros/s/AKfycbznMUtwucns3XhMAsjmZA__QfEyspcCEcSObDsKjeLlCIU0Rny49dMDHoGvB1xuw-J1/exec';
-  /* ============================================================= */
+  /* ================================== */
 
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
   };
   var q = new URLSearchParams(location.search);
-  /* Chìa khóa thiết bị: lấy từ link (biểu tượng màn hình chính) hoặc bộ nhớ của trang này */
   var key = q.get('k') || store.get('kp_k') || '';
   var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
 
@@ -57,14 +139,15 @@
     if (!src) return;
     document.getElementById('touch').href = src;
     document.getElementById('icon').href = src;
-    var w = document.getElementById('wlogo'); w.src = src; w.hidden = false;
+    var w = document.getElementById('wlogo'); 
+    w.src = src; 
+    w.hidden = false;
   }
   setIcon(store.get('kp_logo'));
 
   function keepKey(k) {
     key = k || '';
     store.set('kp_k', key);
-    /* Ghi chìa khóa lên thanh địa chỉ: khi "Thêm vào MH chính", biểu tượng mở thẳng vào app, không hỏi lại mật khẩu */
     var u = new URL(location.href);
     if (key) u.searchParams.set('k', key); else u.searchParams.delete('k');
     try { history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) {}
@@ -76,18 +159,25 @@
     var d = e.data || {};
     if (!d.kp) return;
     if (d.type === 'key') keepKey(d.key);
-    if (d.type === 'brand' && /^data:image\//.test(d.logo || '') && d.logo.length < 300000) { store.set('kp_logo', d.logo); setIcon(d.logo); }
+    if (d.type === 'brand' && /^data:image\//.test(d.logo || '') && d.logo.length < 300000) { 
+      store.set('kp_logo', d.logo); 
+      setIcon(d.logo); 
+    }
   });
 
   var frame = document.getElementById('app');
   if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(APP_URL)) {
     var er = document.getElementById('err');
     er.style.display = 'block';
-    er.textContent = 'Chưa dán link web app. Mở file index.html, dán link dạng https://script.google.com/macros/s/…/exec vào dòng APP_URL.';
+    er.textContent = 'Chưa cấu hình đúng link web app. Vui lòng kiểm tra lại biến APP_URL.';
     document.querySelector('#wait .ring').style.display = 'none';
   } else {
     frame.src = APP_URL + '?w=1&sa=' + (standalone ? 1 : 0) + (key ? '&k=' + encodeURIComponent(key) : '');
-    frame.addEventListener('load', function () { setTimeout(function () { document.getElementById('wait').classList.add('off'); }, 250); });
+    frame.addEventListener('load', function () { 
+      setTimeout(function () { 
+        document.getElementById('wait').classList.add('off'); 
+      }, 300); 
+    });
   }
 </script>
 </body>
