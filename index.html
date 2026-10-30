@@ -16,14 +16,13 @@
 <link id="icon" rel="icon" href="data:,">
 <link id="touch" rel="apple-touch-icon" href="data:,">
 <style>
-  :root { --bar: #7d0a0e; --foot: #ffffff; }
-  @media (prefers-color-scheme: dark) { :root { --foot: #1d1517; } }
-  html, body { margin: 0; height: 100%; background: var(--bar); overflow: hidden; }
-  body { display: flex; flex-direction: column; height: 100dvh;
-    padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box;
-    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
-  #app { flex: 1; width: 100%; border: 0; display: block; background: var(--foot); }
-  #foot { height: env(safe-area-inset-bottom, 0px); background: var(--foot); flex: none; }
+  :root { --bar: #7d0a0e; }
+  html, body { margin: 0; height: 100%; background: var(--bar); overflow: hidden; overscroll-behavior: none; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
+  /* Khung app phủ kín toàn màn hình (kể cả dưới tai thỏ và thanh vuốt); app tự chừa khoảng an toàn */
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh; border: 0; display: block; background: transparent; }
+  #probe { position: fixed; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
   #wait { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #8e0b10, #3a0507);
     color: #f0cd7f; text-align: center; transition: opacity .35s; z-index: 2; }
   #wait.off { opacity: 0; pointer-events: none; }
@@ -38,7 +37,7 @@
 <body>
 <div id="wait"><div><img id="wlogo" alt="" hidden><b>CLB VÕ THUẬT TAEKWONDO</b><small>ĐAM MÊ &amp; KỶ LUẬT</small><div class="ring"></div><div id="err"></div></div></div>
 <iframe id="app" title="CLB VÕ THUẬT TAEKWONDO" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
-<div id="foot"></div>
+<div id="probe"></div>
 <script>
   /* ====== DÁN LINK WEB APP VÀO ĐÂY (giữ nguyên dấu nháy) ====== */
   var APP_URL = 'https://script.google.com/macros/s/AKfycbznMUtwucns3XhMAsjmZA__QfEyspcCEcSObDsKjeLlCIU0Rny49dMDHoGvB1xuw-J1/exec';
@@ -86,7 +85,10 @@
     er.textContent = 'Chưa dán link web app. Mở file index.html, dán link dạng https://script.google.com/macros/s/…/exec vào dòng APP_URL.';
     document.querySelector('#wait .ring').style.display = 'none';
   } else {
-    frame.src = APP_URL + '?w=1&sa=' + (standalone ? 1 : 0) + (key ? '&k=' + encodeURIComponent(key) : '');
+    /* Đo khoảng an toàn của màn hình (tai thỏ phía trên, thanh vuốt phía dưới) rồi báo cho app */
+    var pr = getComputedStyle(document.getElementById('probe'));
+    var it = Math.round(parseFloat(pr.paddingTop) || 0), ib = Math.round(parseFloat(pr.paddingBottom) || 0);
+    frame.src = APP_URL + '?w=1&sa=' + (standalone ? 1 : 0) + '&it=' + it + '&ib=' + ib + (key ? '&k=' + encodeURIComponent(key) : '');
     frame.addEventListener('load', function () { setTimeout(function () { document.getElementById('wait').classList.add('off'); }, 250); });
   }
 </script>
