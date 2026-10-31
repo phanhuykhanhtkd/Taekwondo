@@ -44,16 +44,17 @@
     z-index: 1;
   }
 
-  /* Màn hình chờ khởi động */
+  /* Màn hình chờ khởi động đồng bộ bản sắc võ đường */
   #wait { 
     position: fixed; 
     inset: 0; 
     display: grid; 
     place-items: center; 
-    background: radial-gradient(circle at 50% 35%, #8e0b10, #220304);
+    background: radial-gradient(120% 80% at 50% 30%, #8e0b10 0%, #3a0507 60%, #170203 100%);
     color: #f0cd7f; 
     text-align: center; 
-    transition: opacity .4s ease, visibility .4s ease; 
+    padding: 24px;
+    transition: opacity .45s cubic-bezier(.22,1,.36,1), visibility .45s ease; 
     z-index: 10; 
   }
   #wait.off { 
@@ -61,38 +62,96 @@
     visibility: hidden; 
     pointer-events: none; 
   }
-  #wait img { 
+  .w-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 360px;
+  }
+  .w-emb {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 16px;
+    display: grid;
+    place-items: center;
+  }
+  .w-emb::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px dashed rgba(240, 205, 127, 0.45);
+    animation: rot 12s linear infinite;
+  }
+  .w-emb::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 2px solid rgba(240, 205, 127, 0.55);
+    animation: wpulse 2s ease-out infinite;
+  }
+  #wait img, #wait svg.emb-fallback { 
     width: 90px; 
     height: 90px; 
     border-radius: 50%; 
-    object-fit: contain; 
+    object-fit: cover; 
     display: block; 
-    margin: 0 auto 14px; 
-    box-shadow: 0 0 0 3px rgba(240, 205, 127, 0.4);
+    box-shadow: 0 0 0 3px rgba(240, 205, 127, 0.75), 0 8px 24px rgba(0, 0, 0, 0.45);
+    background: #8a0000;
+    position: relative;
+    z-index: 1;
   }
   #wait b { 
     display: block; 
-    font-size: 20px; 
-    letter-spacing: .1em; 
+    font-size: 21px; 
+    font-weight: 700;
+    letter-spacing: .12em; 
     color: #fff; 
+    text-shadow: 0 2px 8px rgba(0,0,0,.35);
   }
   #wait small { 
     display: block; 
     margin-top: 6px; 
     font-size: 12px; 
-    letter-spacing: .2em; 
-    opacity: 0.85;
+    font-weight: 600;
+    letter-spacing: .22em; 
+    opacity: 0.88;
   }
   #wait .ring { 
-    width: 28px; 
-    height: 28px; 
-    margin: 18px auto 0; 
-    border: 3px solid rgba(240, 205, 127, 0.25); 
+    width: 30px; 
+    height: 30px; 
+    margin: 20px auto 0; 
+    border: 3px solid rgba(240, 205, 127, 0.22); 
     border-top-color: #f0cd7f; 
     border-radius: 50%; 
-    animation: rot 0.9s linear infinite; 
+    animation: rot 0.85s cubic-bezier(.6,0,.4,1) infinite; 
   }
   @keyframes rot { to { transform: rotate(360deg); } }
+  @keyframes wpulse { 0% { opacity: .65; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.26); } }
+
+  #whint {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.75);
+    min-height: 18px;
+    line-height: 1.45;
+  }
+  #wretry {
+    display: none;
+    margin-top: 12px;
+    border: 1px solid rgba(240, 205, 127, 0.6);
+    border-radius: 999px;
+    padding: 9px 20px;
+    font-weight: 700;
+    font-size: 13.5px;
+    background: linear-gradient(135deg, #f0cd7f, #d79b2a);
+    color: #3b0a0c;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+  #wretry:active { transform: scale(.96); }
 
   #err { 
     display: none; 
@@ -101,20 +160,31 @@
     font-size: 13.5px; 
     line-height: 1.5; 
     color: #ffb4ad; 
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255, 180, 173, 0.25);
     padding: 10px 14px;
-    border-radius: 12px;
+    border-radius: 14px;
   }
 </style>
 </head>
 <body>
 
 <div id="wait">
-  <div>
-    <img id="wlogo" alt="" hidden>
+  <div class="w-box">
+    <div class="w-emb">
+      <img id="wlogo" alt="Logo CLB" hidden>
+      <svg id="wemb" class="emb-fallback" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#8a0000" stroke="#e7c47a" stroke-width="3"/>
+        <text x="32" y="39" text-anchor="middle" font-family="Arial Narrow,Arial,sans-serif" font-weight="700" font-size="20" fill="#fff">KP</text>
+        <rect x="14" y="44" width="36" height="5" rx="1.5" fill="#111"/>
+        <rect x="29" y="42" width="6" height="9" rx="1.5" fill="#111"/>
+      </svg>
+    </div>
     <b>CLB VÕ THUẬT TAEKWONDO</b>
     <small>ĐAM MÊ &amp; KỶ LUẬT</small>
-    <div class="ring"></div>
+    <div class="ring" id="wring"></div>
+    <div id="whint">Đang kết nối võ đường…</div>
+    <button type="button" id="wretry" onclick="location.reload()">Tải lại trang</button>
     <div id="err"></div>
   </div>
 </div>
@@ -139,9 +209,10 @@
     if (!src) return;
     document.getElementById('touch').href = src;
     document.getElementById('icon').href = src;
-    var w = document.getElementById('wlogo'); 
+    var w = document.getElementById('wlogo'), emb = document.getElementById('wemb'); 
     w.src = src; 
     w.hidden = false;
+    if (emb) emb.style.display = 'none';
   }
   setIcon(store.get('kp_logo'));
 
@@ -166,17 +237,26 @@
   });
 
   var frame = document.getElementById('app');
+  var hint = document.getElementById('whint');
+  var retry = document.getElementById('wretry');
   if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(APP_URL)) {
     var er = document.getElementById('err');
     er.style.display = 'block';
     er.textContent = 'Chưa cấu hình đúng link web app. Vui lòng kiểm tra lại biến APP_URL.';
-    document.querySelector('#wait .ring').style.display = 'none';
+    document.getElementById('wring').style.display = 'none';
+    if (hint) hint.style.display = 'none';
   } else {
+    var t1 = setTimeout(function () { if (hint) hint.textContent = 'Mạng hơi chậm, vui lòng chờ thêm giây lát…'; }, 7000);
+    var t2 = setTimeout(function () {
+      if (hint) hint.textContent = 'Kết nối mất nhiều thời gian hơn dự kiến. Kiểm tra mạng hoặc thử tải lại.';
+      if (retry) retry.style.display = 'inline-block';
+    }, 18000);
     frame.src = APP_URL + '?w=1&sa=' + (standalone ? 1 : 0) + (key ? '&k=' + encodeURIComponent(key) : '');
     frame.addEventListener('load', function () { 
+      clearTimeout(t1); clearTimeout(t2);
       setTimeout(function () { 
         document.getElementById('wait').classList.add('off'); 
-      }, 300); 
+      }, 280); 
     });
   }
 </script>
