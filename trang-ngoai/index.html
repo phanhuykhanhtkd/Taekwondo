@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<!-- KP Taekwondo – Trang ngoài toàn màn hình (không có dòng chữ của Google), cài được ra màn hình chính iPhone và Android -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Taekwondo">
+<meta name="application-name" content="CLB VÕ THUẬT TAEKWONDO">
+<meta name="theme-color" content="#7d0a0e">
+<title>CLB VÕ THUẬT TAEKWONDO</title>
+<link rel="manifest" href="manifest.json">
+<link id="icon" rel="icon" href="icon-192.png">
+<link id="touch" rel="apple-touch-icon" href="icon-512.png">
+<style>
+  :root { 
+    --bar: #7d0a0e;     /* màu thanh đầu của app (app tự báo lại khi đổi giao diện) */
+    --foot: #130c0e;    /* màu thanh menu dưới của app */
+  }
+
+  /* Nền ngoài khung: nửa trên màu thanh đầu, nửa dưới màu thanh menu → không bao giờ lộ vệt màu lệch */
+  html {
+    margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none;
+    background: var(--foot) linear-gradient(var(--bar), var(--bar)) top / 100% 50% no-repeat;
+  }
+  body { 
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: transparent; 
+    overflow: hidden; 
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Khung app phủ kín toàn màn hình (cả dưới tai thỏ và thanh vuốt); app tự chừa khoảng an toàn.
+     Chiều cao tính lại bằng JS vì có bản iOS báo chiều cao màn hình thiếu khi mở từ biểu tượng. */
+  #app { 
+    position: fixed;
+    left: 0; top: 0;
+    width: 100%; 
+    height: 100%; 
+    border: 0; 
+    display: block; 
+    background: transparent; 
+    z-index: 1;
+  }
+  #probe { position: fixed; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; }
+
+  /* Màn hình chờ khởi động đồng bộ bản sắc võ đường */
+  #wait { 
+    position: fixed; 
+    inset: 0; 
+    display: grid; 
+    place-items: center; 
+    background: radial-gradient(120% 80% at 50% 30%, #8e0b10 0%, #3a0507 60%, #170203 100%);
+    color: #f0cd7f; 
+    text-align: center; 
+    padding: 24px;
+    transition: opacity .45s cubic-bezier(.22,1,.36,1), visibility .45s ease; 
+    z-index: 10; 
+  }
+  #wait.off { 
+    opacity: 0; 
+    visibility: hidden; 
+    pointer-events: none; 
+  }
+  .w-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 360px;
+  }
+  .w-emb {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 16px;
+    display: grid;
+    place-items: center;
+  }
+  .w-emb::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px dashed rgba(240, 205, 127, 0.45);
+    animation: rot 12s linear infinite;
+  }
+  .w-emb::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 2px solid rgba(240, 205, 127, 0.55);
+    animation: wpulse 2s ease-out infinite;
+  }
+  #wait img, #wait svg.emb-fallback { 
+    width: 90px; 
+    height: 90px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    display: block; 
+    box-shadow: 0 0 0 3px rgba(240, 205, 127, 0.75), 0 8px 24px rgba(0, 0, 0, 0.45);
+    background: #8a0000;
+    position: relative;
+    z-index: 1;
+  }
+  #wait b { 
+    display: block; 
+    font-size: 21px; 
+    font-weight: 700;
+    letter-spacing: .12em; 
+    color: #fff; 
+    text-shadow: 0 2px 8px rgba(0,0,0,.35);
+  }
+  #wait small { 
+    display: block; 
+    margin-top: 6px; 
+    font-size: 12px; 
+    font-weight: 600;
+    letter-spacing: .22em; 
+    opacity: 0.88;
+  }
+  #wait .ring { 
+    width: 30px; 
+    height: 30px; 
+    margin: 20px auto 0; 
+    border: 3px solid rgba(240, 205, 127, 0.22); 
+    border-top-color: #f0cd7f; 
+    border-radius: 50%; 
+    animation: rot 0.85s cubic-bezier(.6,0,.4,1) infinite; 
+  }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  @keyframes wpulse { 0% { opacity: .65; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.26); } }
+
+  #whint {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.75);
+    min-height: 18px;
+    line-height: 1.45;
+  }
+  #wretry {
+    display: none;
+    margin-top: 12px;
+    border: 1px solid rgba(240, 205, 127, 0.6);
+    border-radius: 999px;
+    padding: 9px 20px;
+    font-weight: 700;
+    font-size: 13.5px;
+    background: linear-gradient(135deg, #f0cd7f, #d79b2a);
+    color: #3b0a0c;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+  #wretry:active { transform: scale(.96); }
+
+  #err { 
+    display: none; 
+    max-width: 320px; 
+    margin: 16px auto 0; 
+    font-size: 13.5px; 
+    line-height: 1.5; 
+    color: #ffb4ad; 
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255, 180, 173, 0.25);
+    padding: 10px 14px;
+    border-radius: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div id="wait">
+  <div class="w-box">
+    <div class="w-emb">
+      <img id="wlogo" alt="Logo CLB" hidden>
+      <svg id="wemb" class="emb-fallback" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#8a0000" stroke="#e7c47a" stroke-width="3"/>
+        <text x="32" y="39" text-anchor="middle" font-family="Arial Narrow,Arial,sans-serif" font-weight="700" font-size="20" fill="#fff">KP</text>
+        <rect x="14" y="44" width="36" height="5" rx="1.5" fill="#111"/>
+        <rect x="29" y="42" width="6" height="9" rx="1.5" fill="#111"/>
+      </svg>
+    </div>
+    <b>CLB VÕ THUẬT TAEKWONDO</b>
+    <small>ĐAM MÊ &amp; KỶ LUẬT</small>
+    <div class="ring" id="wring"></div>
+    <div id="whint">Đang kết nối võ đường…</div>
+    <button type="button" id="wretry" onclick="location.reload()">Tải lại trang</button>
+    <div id="err"></div>
+  </div>
+</div>
+
+<div id="probe"></div>
+<iframe id="app" title="CLB VÕ THUẬT TAEKWONDO" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+
+<script>
+  /* Android: cho phép "Cài đặt ứng dụng" ra màn hình chính, mở toàn màn hình */
+  if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} }
+
+  /* ====== LINK WEB APP CỦA CLB ====== */
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbznMUtwucns3XhMAsjmZA__QfEyspcCEcSObDsKjeLlCIU0Rny49dMDHoGvB1xuw-J1/exec';
+  /* ================================== */
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
+  };
+  var q = new URLSearchParams(location.search);
+  var key = q.get('k') || store.get('kp_k') || '';
+  var standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+
+  function setIcon(src) {
+    if (!src) return;
+    document.getElementById('touch').href = src;
+    document.getElementById('icon').href = src;
+    var w = document.getElementById('wlogo'), emb = document.getElementById('wemb'); 
+    w.src = src; 
+    w.hidden = false;
+    if (emb) emb.style.display = 'none';
+  }
+  setIcon(store.get('kp_logo'));
+
+  function keepKey(k) {
+    key = k || '';
+    store.set('kp_k', key);
+    var u = new URL(location.href);
+    if (key) u.searchParams.set('k', key); else u.searchParams.delete('k');
+    try { history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) {}
+  }
+
+  window.addEventListener('message', function (e) {
+    var o = String(e.origin || '');
+    if (!/^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com$/.test(o) && o !== 'https://script.google.com') return;
+    var d = e.data || {};
+    if (!d.kp) return;
+    if (d.type === 'key') keepKey(d.key);
+    if (d.type === 'theme') {
+      var hex = /^#[0-9a-f]{3,8}$/i, rs = document.documentElement.style;
+      if (hex.test(d.bar || '')) rs.setProperty('--bar', d.bar);
+      if (hex.test(d.foot || '')) { rs.setProperty('--foot', d.foot); var tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = d.foot; }
+    }
+    if (d.type === 'brand' && /^data:image\//.test(d.logo || '') && d.logo.length < 300000) { 
+      store.set('kp_logo', d.logo); 
+      setIcon(d.logo); 
+    }
+  });
+
+  var frame = document.getElementById('app');
+  /* Khung app luôn cao bằng cả màn hình: mở từ biểu tượng trên iPhone, có máy báo chiều cao trang thiếu ~47 điểm */
+  function fit() {
+    var h = window.innerHeight;
+    if (standalone && /iP(hone|od|ad)/.test(navigator.userAgent)) {
+      var portrait = window.innerHeight >= window.innerWidth;
+      var sh = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+      if (sh > h && sh - h < 140) h = sh;
+    }
+    frame.style.height = h + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+  var hint = document.getElementById('whint');
+  var retry = document.getElementById('wretry');
+  if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(APP_URL)) {
+    var er = document.getElementById('err');
+    er.style.display = 'block';
+    er.textContent = 'Chưa cấu hình đúng link web app. Vui lòng kiểm tra lại biến APP_URL.';
+    document.getElementById('wring').style.display = 'none';
+    if (hint) hint.style.display = 'none';
+  } else {
+    var t1 = setTimeout(function () { if (hint) hint.textContent = 'Mạng hơi chậm, vui lòng chờ thêm giây lát…'; }, 7000);
+    var t2 = setTimeout(function () {
+      if (hint) hint.textContent = 'Kết nối mất nhiều thời gian hơn dự kiến. Kiểm tra mạng hoặc thử tải lại.';
+      if (retry) retry.style.display = 'inline-block';
+    }, 18000);
+    /* Đo khoảng an toàn (tai thỏ phía trên, thanh vuốt phía dưới) rồi báo cho app để app chừa đúng một lần */
+    var pr = getComputedStyle(document.getElementById('probe'));
+    var it = Math.round(parseFloat(pr.paddingTop) || 0), ib = Math.round(parseFloat(pr.paddingBottom) || 0);
+    if (standalone && /iPhone/.test(navigator.userAgent) && window.innerHeight > window.innerWidth) {
+      var shh = Math.max(screen.width, screen.height);
+      if (!it) it = ({956: 62, 874: 62, 932: 59, 852: 54, 926: 47, 844: 47, 812: 47, 896: 47, 780: 50})[shh] || (shh >= 812 ? 50 : 20);
+      if (!ib && shh >= 780) ib = 34;
+    }
+    frame.src = APP_URL + '?w=1&sa=' + (standalone ? 1 : 0) + '&it=' + it + '&ib=' + ib + (key ? '&k=' + encodeURIComponent(key) : '');
+    frame.addEventListener('load', function () { 
+      clearTimeout(t1); clearTimeout(t2);
+      setTimeout(function () { 
+        document.getElementById('wait').classList.add('off'); 
+      }, 280); 
+    });
+  }
+</script>
+</body>
+</html>
